@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2° Parcial - Modelos de Desarrollo de Software</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+        h1 { text-align: center; color: #1976d2; }
+        .timer { position: fixed; top: 15px; right: 15px; background: #d32f2f; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 1.1em; z-index: 1000; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .question { margin-bottom: 35px; padding: 20px; background: white; border: 1px solid #ddd; border-radius: 10px; }
+        label { display: block; margin: 12px 0; font-size: 1.05em; cursor: pointer; }
+        button { padding: 14px 30px; background: #1976d2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1em; margin: 10px; }
+        button:hover { background: #1565c0; }
+        input[type="text"] { padding: 12px; width: 100%; max-width: 500px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #1976d2; color: white; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>2° Parcial - Modelos de Desarrollo de Software</h1>
+
+    <!-- Pantalla de inicio -->
+    <div id="startScreen" class="container">
+        <h2>Ingresa tus datos para comenzar el examen</h2>
+        <label>Nombre completo:</label>
+        <input type="text" id="studentName" placeholder="Ej: María López García" required><br><br>
+        <label>Código / Matrícula:</label>
+        <input type="text" id="studentId" placeholder="Ej: 20230125" required><br><br>
+        <button onclick="startExam()">Comenzar Examen</button>
+    </div>
+
+    <!-- Pantalla del examen -->
+    <div id="examScreen" class="hidden">
+        <div id="timer" class="timer">Tiempo restante: <span id="time">45:00</span></div>
+        <div id="quiz"></div>
+        <center><button id="submitBtn" onclick="submitQuiz()">Finalizar Examen</button></center>
+    </div>
+
+    <!-- Resultado individual -->
+    <div id="resultScreen" class="hidden container">
+        <div id="result"></div>
+        <button onclick="showAllResults()">Ver todas las notas</button>
+        <button onclick="location.reload()">Cerrar</button>
+    </div>
+
+    <!-- Tabla de todos los resultados -->
+    <div id="allResultsScreen" class="hidden container">
+        <h2>📊 Resultados de todos los estudiantes</h2>
+        <button onclick="hideAllResults()">Volver</button>
+        <table id="resultsTable">
+            <thead>
+                <tr><th>Nombre</th><th>Código</th><th>Puntuación</th><th>Fecha</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+<script>
+// === 40 PREGUNTAS COMPLETAS ===
+const fullQuestions = [
+    // MODELO EN V
+    {q: "1. ¿Qué representa el Modelo en V en el desarrollo de software?", options: ["A) Un modelo de bases de datos", "B) Una metodología que relaciona desarrollo y pruebas", "C) Un lenguaje de programación", "D) Un sistema operativo"], ans: "B"},
+    {q: "2. ¿Cuál es la principal característica del Modelo en V?", options: ["A) No realiza pruebas", "B) Se enfoca solo en programación", "C) Cada fase de desarrollo tiene una fase de prueba asociada", "D) Solo sirve para aplicaciones web"], ans: "C"},
+    {q: "3. ¿Qué se hace en la fase de requerimientos?", options: ["A) Se programa el sistema", "B) Se diseña la interfaz", "C) Se recopilan y analizan necesidades del cliente", "D) Se realizan pruebas"], ans: "C"},
+    {q: "4. ¿Qué sucede después de la fase de requerimientos?", options: ["A) Implementación", "B) Diseño del sistema", "C) Pruebas unitarias", "D) Mantenimiento"], ans: "B"},
+    {q: "5. ¿Qué se realiza en la etapa de codificación?", options: ["A) Se analizan requerimientos", "B) Se prueban módulos", "C) Se escribe el código fuente", "D) Se diseña el hardware"], ans: "C"},
+    {q: "6. ¿Qué verifican las pruebas unitarias?", options: ["A) Todo el sistema", "B) Cada módulo individualmente", "C) La seguridad del software", "D) La base de datos"], ans: "B"},
+    {q: "7. ¿Qué comprueban las pruebas de integración?", options: ["A) Los requerimientos", "B) La documentación", "C) Que los módulos trabajen juntos correctamente", "D) El diseño gráfico"], ans: "C"},
+    {q: "8. ¿Cuál es una ventaja del Modelo en V?", options: ["A) No requiere documentación", "B) Reduce costos de hardware", "C) Detección temprana de errores", "D) Elimina todas las pruebas"], ans: "C"},
+    {q: "9. ¿Qué permite una buena organización en el Modelo en V?", options: ["A) Mayor desorden", "B) Mejor control del proyecto", "C) Menos calidad", "D) Más tiempo perdido"], ans: "B"},
+    {q: "10. ¿Cuál es uno de los beneficios finales del Modelo en V?", options: ["A) Mayor calidad del software", "B) Menor uso de computadoras", "C) Más errores", "D) Menos clientes"], ans: "A"},
+
+    // MODELO DE PROTOTIPO
+    {q: "11. ¿Qué es la metodología de desarrollo basada en el modelo de prototipo?", options: ["A) Un método para eliminar errores al final del proyecto", "B) Una técnica para crear software progresivamente mediante versiones preliminares", "C) Un lenguaje de programación", "D) Un sistema de bases de datos"], ans: "B"},
+    {q: "12. ¿Cuál es el principal objetivo del modelo de prototipo?", options: ["A) Reducir el uso de computadoras", "B) Garantizar que el producto final cumpla con los requerimientos reales del usuario", "C) Terminar rápido el software", "D) Evitar pruebas"], ans: "B"},
+    {q: "13. ¿Qué permite el prototipo inicial al usuario?", options: ["A) Comprar el sistema", "B) Modificar el hardware", "C) Interactuar con el sistema antes de la versión final", "D) Instalar el sistema completo"], ans: "C"},
+    {q: "14. ¿Qué sucede después de que el usuario prueba el prototipo?", options: ["A) Se elimina el sistema", "B) Se entrega la versión final inmediatamente", "C) El usuario proporciona observaciones y sugerencias", "D) Se detiene el proyecto"], ans: "C"},
+    {q: "15. ¿Cuál es una ventaja del modelo de prototipo?", options: ["A) No necesita usuarios", "B) Detección temprana de errores", "C) Nunca cambia", "D) No requiere análisis"], ans: "B"},
+    {q: "16. ¿Qué otra ventaja ofrece el modelo de prototipo?", options: ["A) Participación constante del usuario", "B) Elimina la programación", "C) Reduce la memoria RAM", "D) No necesita pruebas"], ans: "A"},
+    {q: "17. ¿Cuál es una desventaja del modelo de prototipo?", options: ["A) Disminuye la calidad", "B) Puede aumentar el tiempo de desarrollo", "C) Elimina requerimientos", "D) No permite cambios"], ans: "B"},
+    {q: "18. ¿Por qué el modelo de prototipo es flexible?", options: ["A) Porque no necesita usuarios", "B) Porque permite realizar cambios durante el desarrollo", "C) Porque se usa solo una vez", "D) Porque no tiene fases"], ans: "B"},
+    {q: "19. ¿Qué mejora el modelo de prototipo entre cliente y desarrollador?", options: ["A) La velocidad del internet", "B) La comunicación", "C) La memoria del computador", "D) El hardware"], ans: "B"},
+    {q: "20. ¿Qué permite adaptar el modelo de prototipo?", options: ["A) El sistema a las necesidades reales del usuario", "B) El hardware a la empresa", "C) La computadora al cliente", "D) El servidor al diseño"], ans: "A"},
+
+    // MODELO EN CASCADA
+    {q: "21. ¿Qué es el Modelo en Cascada?", options: ["A) Un modelo de base de datos", "B) Una metodología de desarrollo secuencial donde cada fase debe terminar antes de iniciar la siguiente", "C) Un lenguaje de programación", "D) Un sistema operativo"], ans: "B"},
+    {q: "22. ¿Cuál es la principal característica del Modelo en Cascada?", options: ["A) Permite trabajar en todas las fases al mismo tiempo", "B) Cada etapa se realiza de forma secuencial", "C) No necesita planificación", "D) Se basa solo en pruebas"], ans: "B"},
+    {q: "23. ¿Cuál es el objetivo principal de la fase de análisis de requisitos?", options: ["A) Crear la interfaz del sistema", "B) Programar el software", "C) Identificar y documentar las necesidades del usuario", "D) Realizar mantenimiento"], ans: "C"},
+    {q: "24. ¿Qué actividad se realiza en la etapa de diseño del sistema?", options: ["A) Instalación del software", "B) Diseño de base de datos", "C) Eliminación de errores", "D) Capacitación del usuario"], ans: "B"},
+    {q: "25. ¿Qué otra actividad se realiza en la etapa de diseño?", options: ["A) Diseño de interfaces", "B) Pruebas de integración", "C) Mantenimiento", "D) Recolección de requisitos"], ans: "A"},
+    {q: "26. ¿Qué tipo de pruebas se realizan en la fase de pruebas?", options: ["A) Solo pruebas de hardware", "B) Pruebas unitarias, de integración y de sistema", "C) Solo pruebas unitarias", "D) Solo pruebas de sistema"], ans: "B"},
+    {q: "27. ¿Qué verifican las pruebas unitarias?", options: ["A) El sistema completo", "B) Cada módulo individualmente", "C) La base de datos", "D) La red del sistema"], ans: "B"},
+    {q: "28. ¿Qué verifican las pruebas de integración?", options: ["A) El funcionamiento conjunto de los módulos", "B) El diseño del sistema", "C) La seguridad informática", "D) Los requisitos del usuario"], ans: "A"},
+    {q: "29. ¿Cuál es una ventaja del Modelo en Cascada?", options: ["A) Fácil de planificar", "B) Alta flexibilidad", "C) Menor documentación", "D) Cambios constantes"], ans: "A"},
+    {q: "30. ¿Cuál es una desventaja del Modelo en Cascada?", options: ["A) Mejor organización", "B) Poca flexibilidad", "C) Fácil de usar", "D) Detección temprana de errores"], ans: "B"},
+
+    // MODELO ESPIRAL
+    {q: "31. ¿Qué es el Modelo Espiral?", options: ["A) Un lenguaje de programación", "B) Una metodología de desarrollo basada en iteración y análisis de riesgos", "C) Un sistema operativo", "D) Un modelo de base de datos"], ans: "B"},
+    {q: "32. ¿Qué representa cada vuelta de la espiral?", options: ["A) Un error del sistema", "B) Una fase completa del desarrollo", "C) Un módulo de hardware", "D) Una prueba final"], ans: "B"},
+    {q: "33. ¿Cuál es el objetivo principal del Modelo Espiral?", options: ["A) Reducir la documentación", "B) Minimizar riesgos antes de afectar el proyecto", "C) Eliminar pruebas", "D) Aumentar el costo del software"], ans: "B"},
+    {q: "34. ¿Qué modelo aporta estructura y planificación al Modelo Espiral?", options: ["A) Modelo Prototipo", "B) Modelo Cascada", "C) Modelo Incremental", "D) Modelo RAD"], ans: "B"},
+    {q: "35. ¿Qué modelo aporta mejoras continuas al Modelo Espiral?", options: ["A) Modelo Iterativo", "B) Modelo en V", "C) Modelo Cascada", "D) Modelo Lineal"], ans: "A"},
+    {q: "36. ¿Cuál es una de las cuatro fases del Modelo Espiral?", options: ["A) Instalación", "B) Planificación y definición de objetivos", "C) Mantenimiento físico", "D) Eliminación del sistema"], ans: "B"},
+    {q: "37. ¿Qué se realiza en la fase de análisis y gestión de riesgos?", options: ["A) Identificar y solucionar problemas potenciales", "B) Diseñar interfaces", "C) Programar módulos", "D) Instalar servidores"], ans: "A"},
+    {q: "38. ¿Qué sucede en la fase de evaluación del cliente?", options: ["A) El cliente revisa y da retroalimentación sobre el sistema", "B) Se elimina el software", "C) Se compra hardware", "D) Se finaliza el proyecto automáticamente"], ans: "A"},
+    {q: "39. ¿En qué tipo de proyectos se recomienda usar el Modelo Espiral?", options: ["A) Proyectos pequeños y simples", "B) Proyectos grandes y complejos", "C) Solo videojuegos", "D) Solo páginas web"], ans: "B"},
+    {q: "40. ¿Cuál es un ejemplo de sistema donde se aplica el Modelo Espiral?", options: ["A) Sistemas bancarios", "B) Calculadora básica", "C) Bloc de notas", "D) Agenda simple"], ans: "A"}
+];
+
+let questions = [];
+let answers = {};
+let timeLeft = 45 * 60;
+let timerInterval;
+let currentStudent = {};
+
+function startExam() {
+    const name = document.getElementById('studentName').value.trim();
+    const id = document.getElementById('studentId').value.trim();
+
+    if (!name || !id) {
+        alert("❌ Por favor ingresa tu nombre completo y código.");
+        return;
+    }
+
+    const attempts = JSON.parse(localStorage.getItem('examAttempts') || '[]');
+    if (attempts.some(a => a.studentId === id)) {
+        alert("⚠️ Ya has realizado este examen. Solo se permite un intento por estudiante.");
+        return;
+    }
+
+    currentStudent = { name, studentId: id, date: new Date().toLocaleString() };
+    
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('examScreen').classList.remove('hidden');
+    
+    startTimer();
+    renderQuiz();
+}
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        const min = Math.floor(timeLeft / 60);
+        const sec = timeLeft % 60;
+        document.getElementById('time').textContent = `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        if (timeLeft <= 0) submitQuiz();
+    }, 1000);
+}
+
+function renderQuiz() {
+    questions = [...fullQuestions].sort(() => Math.random() - 0.5).slice(0, 20);
+    const quizDiv = document.getElementById('quiz');
+    quizDiv.innerHTML = questions.map((q, i) => `
+        <div class="question">
+            <h3>${q.q}</h3>
+            ${q.options.map(opt => `
+                <label>
+                    <input type="radio" name="q${i}" value="${opt[0]}" onchange="answers[${i}] = '${opt[0]}'">
+                    ${opt}
+                </label>
+            `).join('')}
+        </div>
+    `).join('');
+}
+
+function submitQuiz() {
+    clearInterval(timerInterval);
+    let score = 0;
+    let feedback = '';
+
+    questions.forEach((q, i) => {
+        const userAns = answers[i];
+        if (userAns === q.ans) score += 5;
+        feedback += `<p><strong>${q.q}</strong><br>Tu respuesta: <b>${userAns || 'Sin responder'}</b> | Correcta: <b>${q.ans}</b></p>`;
+    });
+
+    const finalScore = score;
+
+    // Guardar resultado
+    const attempts = JSON.parse(localStorage.getItem('examAttempts') || '[]');
+    attempts.push({
+        ...currentStudent,
+        score: finalScore,
+        timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('examAttempts', JSON.stringify(attempts));
+
+    // Mostrar resultado
+    document.getElementById('examScreen').classList.add('hidden');
+    document.getElementById('resultScreen').classList.remove('hidden');
+
+    document.getElementById('result').innerHTML = `
+        <h2>✅ Examen Finalizado</h2>
+        <h3>Estudiante: ${currentStudent.name}</h3>
+        <h3>Puntuación: <strong>${finalScore} / 100</strong> puntos</h3>
+        <h4>Respuestas detalladas:</h4>
+        ${feedback}
+    `;
+}
+
+function showAllResults() {
+    document.getElementById('resultScreen').classList.add('hidden');
+    document.getElementById('allResultsScreen').classList.remove('hidden');
+
+    const attempts = JSON.parse(localStorage.getItem('examAttempts') || '[]');
+    const tbody = document.querySelector('#resultsTable tbody');
+    tbody.innerHTML = '';
+
+    attempts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    attempts.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${a.name}</td>
+            <td>${a.studentId}</td>
+            <td><strong>${a.score} / 100</strong></td>
+            <td>${a.date}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function hideAllResults() {
+    document.getElementById('allResultsScreen').classList.add('hidden');
+    document.getElementById('resultScreen').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
